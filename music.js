@@ -84,11 +84,48 @@ function createJingleBuffer(context) {
 let jingleContext;
 let jingleBuffer;
 let jingleSource;
+let jingleGain;
+let duckJingle = false;
+
+function initGameAudio() {
+  const Audio = window.AudioContext || window.webkitAudioContext;
+  if (!Audio) return;
+  jingleContext ??= new Audio();
+  if (jingleContext.state === 'suspended') void jingleContext.resume().catch(() => {});
+}
+
+function setJingleDucking(active) {
+  duckJingle = active;
+  if (!jingleGain) return;
+  const now = jingleContext.currentTime;
+  jingleGain.gain.cancelScheduledValues(now);
+  jingleGain.gain.setTargetAtTime(active ? .22 : 1, now, .075);
+}
+
+function playPrizeChime() {
+  if (jingleContext?.state !== 'running') return;
+  const start = jingleContext.currentTime;
+  [659.25, 783.99, 1046.5].forEach((frequency, index) => {
+    const note = jingleContext.createOscillator();
+    const gain = jingleContext.createGain();
+    const time = start + index * .10;
+    note.type = 'sine';
+    note.frequency.value = frequency;
+    gain.gain.setValueAtTime(0, time);
+    gain.gain.linearRampToValueAtTime(.055, time + .018);
+    gain.gain.exponentialRampToValueAtTime(.001, time + .27);
+    note.connect(gain).connect(jingleContext.destination);
+    note.start(time);
+    note.stop(time + .28);
+  });
+}
 
 async function setJinglePlaying(playing) {
   if (!playing) {
     if (jingleSource) jingleSource.stop();
     jingleSource = undefined;
+    if (jingleGain) jingleGain.disconnect();
+    jingleGain = undefined;
     return false;
   }
   if (jingleSource) return true;
@@ -101,7 +138,9 @@ async function setJinglePlaying(playing) {
     source = jingleContext.createBufferSource();
     source.buffer = jingleBuffer;
     source.loop = true;
-    source.connect(jingleContext.destination);
+    jingleGain = jingleContext.createGain();
+    jingleGain.gain.value = duckJingle ? .22 : 1;
+    source.connect(jingleGain).connect(jingleContext.destination);
     source.start();
     jingleSource = source;
     await jingleContext.resume();
@@ -110,6 +149,8 @@ async function setJinglePlaying(playing) {
     if (source && jingleSource === source) {
       source.stop();
       jingleSource = undefined;
+      jingleGain?.disconnect();
+      jingleGain = undefined;
     }
     return false;
   }

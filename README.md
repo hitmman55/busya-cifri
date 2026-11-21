@@ -1,18 +1,37 @@
 # Буся и цифры
 
-В «Учить» карточки показывают числа от 1 до 10 и соответствующее количество фруктов, конфет или печений. После десятой карточки можно перейти к тесту. Тест также запускается из меню.
+В «Учить» 11 голосовых карточек от 0 до 10. На каждой можно посчитать предметы, посмотреть написание, обвести число пальцем и попробовать написать рядом. «Найди цифру» проверяет узнавание на слух за пять заданий, от диапазона 1–3 до всех десяти цифр. В «Посчитай предметы» каждое количество от 1 до 10 встречается один раз за раунд, а после второй ошибки предметы подсвечиваются по одному.
 
-В тесте каждое количество от 1 до 10 встречается один раз за раунд. Порядок перемешивается заново при запуске. После второй ошибки предметы подсвечиваются по одному.
+В трёх режимах есть 14 коротких призовых анимаций, по семь в каждой теме. В игре на счёт доступны ещё четыре большие сцены. Правила показа и состав выпуска описаны в [плане голосового обучения](docs/interactive-learning-plan.md).
 
-По умолчанию открывается жёлтая тема с полётом Буси и дракона после 5-го верного ответа и звёздным фейерверком после 10-го. Кнопка «Новый год» переключает оформление на зелёное со снегом, праздничными спрайтами и инструментальной Jingle Bells. Мелодия синтезируется в браузере. Кнопка «Музыка» управляет звуком. При возврате в жёлтую тему музыка останавливается, текущая карточка и прогресс теста сохраняются.
+По умолчанию открывается жёлтая тема с полётом Буси и дракона после 5-го верного ответа и звёздным фейерверком после 10-го. Кнопка «Новый год» переключает оформление на зелёное со снегом, праздничными спрайтами и инструментальной Jingle Bells. Во время реплик музыка приглушается. Голос и музыка отключаются отдельно. При смене темы текущая карточка и прогресс раунда сохраняются.
 
 Новогодние награды — полёт над лесом на санях (18 секунд) и зажигание ёлки (22 секунды). Системная настройка уменьшения движения заменяет анимации статичными сценами.
 
 - `demo.html` открывается в браузере как один файл и работает без сети.
-- `index.html`, `styles.css`, `game.js`, `music.js` и `assets/` — исходники. После правок автономное демо собирается командой `node build-demo.js`.
+- `index.html` открывает версию из отдельных файлов. После правок автономное демо собирается командой `node build-demo.js`.
+- В `curriculum.js` находятся сценарий реплик, карточки и траектории штрихов, в `assets/voice/` — 72 файла MP3. Codex сгенерировал их локально русским голосом Sveta из [Kokoro-RU](https://huggingface.co/zaakirio/kokoro-ru). Для повторной генерации `tools/render-voice.py` принимает каталог с ONNX-моделью, словарём и файлом голоса. Нужны onnxruntime, фонемизатор eSpeak из Piper и lameenc. Игра воспроизводит готовые MP3. Формы цифр сверены с [образцами начертания для 1-го класса, стр. 7](https://content.img-gorod.ru/pim/products/images/48/d4/0193ac2a-a173-7e88-9602-1170396448d4.pdf#page=7).
 - Весь прогресс хранится в памяти вкладки и сбрасывается при перезагрузке.
 
 ## Иллюстрации
+
+Встроенный ImageGen создал четыре листа для голосового выпуска. Нарезка в `assets/` дала 14 призовых спрайтов и два портрета дракона для экрана результата.
+
+**yellow-a**
+
+> Generate one 2×2 game sprite sheet on a truly transparent background. Exact quadrants with wide empty gutters at the 50% horizontal and vertical axes, four separate complete cutouts fully inside their respective quadrants: upper left mint dragon joyfully blowing soap bubbles with a tiny wand; upper right Busya and dragon co-painting a wide colorful rainbow; lower left dragon reaching paws upward to catch a gold five-point star; lower right Busya and dragon flying a big colourful diamond kite. The attached references define the same original pink superhero Busya and mint baby dragon. Match the character designs, warm Dutch nursery storybook gouache, paper texture and round shapes. Focal silhouette occupies 75–82 percent of each tile. Add only the props called for, no horizon, panel backgrounds, frames, detached confetti, shadows or text. Transparent around and between all subjects.
+
+**yellow-b**
+
+> Generate one 2×2 game sprite sheet on a truly transparent background. Exact quadrants with wide empty gutters at the 50% horizontal and vertical axes, four separate complete cutouts fully inside their respective quadrants: upper left Busya and dragon flying right over small colourful party bunting on two posts; upper right dragon holding a wicker basket under a red apple about to fall; lower left Busya and dragon setting a picnic blanket with apples, treats and cookies; lower right a solitary cheerful mint-green baby dragon waving with one paw for game feedback. The attached references define the same original pink superhero Busya and mint baby dragon. Match the character designs, warm Dutch nursery storybook gouache, paper texture and round shapes. Focal silhouette occupies 75–82 percent of each tile. Add only the props called for, no horizon, panel backgrounds, frames, detached confetti, shadows or text. Transparent around and between all subjects.
+
+**winter-a**
+
+> Generate one 2×2 game sprite sheet on a truly transparent background. Exact quadrants with wide empty gutters at the 50% horizontal and vertical axes, four separate complete cutouts fully inside their respective quadrants: upper left dragon holding a small glowing golden winter lantern; upper right Busya and dragon hanging paper snowflakes on a small upright Christmas tree; lower left dragon looking cross-eyed and happy at a white snowflake on its nose; lower right Busya building a snowman and dragon wrapping a coral scarf around it. The attached references define the same original pink superhero Busya and mint baby dragon. Match the character designs, warm Dutch nursery storybook gouache, paper texture and round shapes. Focal silhouette occupies 75–82 percent of each tile. Add only the props called for, no horizon, panel backgrounds, frames, detached confetti, shadows or text. Transparent around and between all subjects.
+
+**winter-b**
+
+> Generate one 2×2 game sprite sheet on a truly transparent background. Exact quadrants with wide empty gutters at the 50% horizontal and vertical axes, four separate complete cutouts fully inside their respective quadrants: upper left Busya and dragon opening a wrapped gift and a string of small coloured fairy lights flowing upward; upper right dragon looking at a red wrapped candy falling into a Christmas stocking; lower left Busya and dragon filling a holiday gift box with gingerbread cookies; lower right a solitary mint green baby dragon waving with one paw, wearing a festive red knit scarf. The attached references define the same original pink superhero Busya and mint baby dragon. Match the character designs, warm Dutch nursery storybook gouache, paper texture and round shapes. Focal silhouette occupies 75–82 percent of each tile. Add only the props called for, no horizon, panel backgrounds, frames, detached confetti, shadows or text. Transparent around and between all subjects.
 
 Встроенный ImageGen создал три новогодних исходника. Спрайты сохранены в `assets/`: `candy.webp`, `cookie-star.webp`, `cookie-tree.webp`, `winter-apple.webp`, `winter-flight.webp`, `winter-tree.webp`.
 

@@ -6,7 +6,13 @@
   <meta name="theme-color" content="#f9df79">
   <title>Буся и цифры</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="learning.css">
+  <script src="curriculum.js" defer></script>
   <script src="music.js" defer></script>
+  <script src="voice.js" defer></script>
+  <script src="writing.js" defer></script>
+  <script src="learning.js" defer></script>
+  <script src="prizes.js" defer></script>
   <script src="game.js" defer></script>
 </head>
 <body>
@@ -17,6 +23,7 @@
       <div class="header-controls">
         <button class="menu-button" id="theme-button" type="button"><span aria-hidden="true">❄</span> Новый год</button>
         <button class="menu-button" id="music-button" type="button" aria-pressed="false" hidden>Музыка</button>
+        <button class="menu-button" id="voice-button" type="button" aria-pressed="true">Голос включён</button>
         <button class="menu-button" id="menu-button" type="button" hidden>В меню</button>
       </div>
     </header>
@@ -33,15 +40,26 @@
         <ol class="progress" id="progress" aria-label="Задания" hidden></ol>
         <h1 id="question" tabindex="-1"></h1>
         <div class="modes" id="modes" hidden>
-          <button type="button" id="learn-button">Учить<span>Числа от 1 до 10</span></button>
-          <button type="button" id="test-button">Тест<span>10 заданий</span></button>
+          <button type="button" id="learn-button">Учить<span>11 голосовых карточек</span></button>
+          <button type="button" id="find-button">Найди цифру<span>5 заданий на слух</span></button>
+          <button type="button" id="test-button">Посчитай предметы<span>10 заданий</span></button>
         </div>
+        <div id="activity-tools" class="activity-tools" hidden></div>
+        <div id="activity" class="activity" hidden></div>
         <div class="fruit-tray" id="fruit-tray" role="group" aria-label="Предметы для счёта" hidden></div>
         <div class="answers" id="answers" role="group" aria-label="Выбери число" hidden></div>
         <p class="feedback" id="feedback" role="status" aria-atomic="true" hidden></p>
+        <div class="voice-line">
+          <p id="voice-caption" aria-live="polite"></p>
+          <button class="menu-button" id="repeat-voice" type="button" hidden>Повторить голос</button>
+        </div>
         <button class="action" id="action" type="button" hidden>Дальше</button>
       </section>
     </div>
+    <details class="adult-settings">
+      <summary>Для взрослого</summary>
+      <p>Голос Буси сгенерирован нейросетью. Голос и музыку можно включать отдельно.</p>
+    </details>
   </main>
 </body>
 </html>

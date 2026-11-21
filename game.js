@@ -1,14 +1,5 @@
 'use strict';
 
-const numbers = Array.from({ length: 10 }, (_, index) => index + 1);
-const numberNames = ['Один', 'Два', 'Три', 'Четыре', 'Пять', 'Шесть', 'Семь', 'Восемь', 'Девять', 'Десять'];
-const items = [
-  { file: 'apple', winterFile: 'winter-apple', name: 'Яблоко', question: 'Сколько яблок?' },
-  { file: 'candy', name: 'Конфета', question: 'Сколько конфет?' },
-  { file: 'cookie-star', winterFile: 'cookie-tree', name: 'Печенье', question: 'Сколько печений?' },
-  { file: 'pear', name: 'Груша', question: 'Сколько груш?' },
-  { file: 'orange', name: 'Мандарин', question: 'Сколько мандаринов?' },
-];
 const rewards = {
   5: {
     className: 'flight',
@@ -64,6 +55,10 @@ let nextAction;
 let winter = false;
 let musicWanted = true;
 let musicRevision = 0;
+let screenLife = new AbortController();
+let cancelScreenView;
+let activePrize;
+let legacyPrizeStarted;
 
 function asset(name) {
   return `assets/${name}.webp`;
@@ -110,6 +105,9 @@ function switchTheme() {
     grid.querySelectorAll('img').forEach(image => { image.src = url; });
   }
   if (tray.dataset.reward) renderRewardScene(Number(tray.dataset.reward));
+  if (activePrize) renderPrizeScene(activePrize);
+  const dragon = activity.querySelector('[data-themed-dragon]');
+  if (dragon) dragon.src = asset(winter ? 'dragon-winter' : 'dragon');
   void syncMusic();
 }
 
@@ -129,7 +127,14 @@ function setAction(label, callback) {
 }
 
 function showScreen(title, message) {
+  screenLife.abort();
+  screenLife = new AbortController();
+  cancelScreenView?.();
+  cancelScreenView = undefined;
+  activePrize = undefined;
+  legacyPrizeStarted = undefined;
   stopHint();
+  clearVoice();
   question.textContent = title;
   speech.textContent = message;
   menuButton.hidden = false;
@@ -142,6 +147,12 @@ function showScreen(title, message) {
   delete tray.dataset.reward;
   tray.replaceChildren();
   answers.replaceChildren();
+  answers.className = 'answers';
+  activity.hidden = true;
+  activity.className = 'activity';
+  activity.replaceChildren();
+  activityTools.hidden = true;
+  activityTools.replaceChildren();
   feedback.textContent = '';
   setAction('', undefined);
 }
@@ -174,35 +185,16 @@ function buildFruitGrid(itemIndex, count, tilt) {
   return grid;
 }
 
-function showLesson(index) {
-  const count = numbers[index];
-  const name = numberNames[index];
-  showScreen(`Число ${count}`, 'Посмотри, как число записывается.');
-  tray.hidden = false;
-  tray.classList.add('lesson-tray');
-  tray.setAttribute('aria-label', `${name}. Предметы для счёта`);
-  const numeral = document.createElement('div');
-  numeral.className = 'lesson-numeral';
-  const figure = document.createElement('strong');
-  figure.textContent = count;
-  const word = document.createElement('span');
-  word.textContent = name;
-  numeral.append(figure, word);
-  tray.append(numeral, buildFruitGrid(index % items.length, count, false));
-  if (index === numbers.length - 1) setAction('Начать тест', startTest);
-  else setAction('Дальше', () => showLesson(index + 1));
-  question.focus();
-}
-
-function updateProgress() {
+function updateProgress(length = numbers.length, position = step, finished = solved) {
   progress.hidden = false;
-  progress.replaceChildren(...numbers.map((number, index) => {
+  progress.replaceChildren(...Array.from({ length }, (_, index) => {
+    const number = index + 1;
     const dot = document.createElement('li');
-    const done = index < step || (index === step && solved);
+    const done = index < position || (index === position && finished);
     dot.textContent = done ? '✓' : number;
     dot.setAttribute('aria-label', done ? `Задание ${number} выполнено` : `Задание ${number}`);
     if (done) dot.classList.add('done');
-    if (index === step && !done) dot.setAttribute('aria-current', 'step');
+    if (index === position && !done) dot.setAttribute('aria-current', 'step');
     return dot;
   }));
 }
@@ -235,6 +227,7 @@ function showQuestion() {
     button.addEventListener('click', () => choose(number, button, count));
     return button;
   }));
+  void say('count-instruction');
   question.focus();
 }
 
@@ -271,25 +264,34 @@ function choose(number, button, count) {
     mistakes += 1;
     button.classList.add('wrong');
     feedback.textContent = mistakes === 1 ? 'Посчитай ещё раз.' : 'Считай по одному.';
+    void say(mistakes === 1 ? 'count-again' : 'count-hint');
     if (mistakes >= 2) showHint();
     return;
   }
   stopHint();
   solved = true;
   const completed = step + 1;
+  const lines = ['count-right', `number-${count}`];
+  const caption = `Верно! ${lessonCards[count].name}.`;
+  const prize = { 3: 'count-third', 7: 'count-seventh' }[completed];
+  if (prize) {
+    showPrize(prize, lines, caption, updateProgress, continueTest);
+    return;
+  }
   if (rewards[completed]) {
-    showReward(completed);
+    showReward(completed, lines, caption);
     return;
   }
   updateProgress();
   button.classList.add('correct');
   feedback.textContent = `Верно! Ответ — ${count}.`;
+  void say(lines, caption);
   setAction('Дальше', continueTest);
   action.focus();
   answers.querySelectorAll('button').forEach(choice => { choice.disabled = true; });
 }
 
-function showReward(completed) {
+function showReward(completed, lines, caption) {
   const final = completed === numbers.length;
   showScreen('', '');
   updateProgress();
@@ -299,6 +301,9 @@ function showReward(completed) {
   renderRewardScene(completed);
   setAction(final ? 'Сыграть ещё' : 'Дальше', final ? startTest : continueTest);
   question.focus();
+  narratePrize(final ? [...lines, 'count-finish'] : lines, final ? `${caption} ${voiceScript['count-finish']}` : caption, started => {
+    legacyPrizeStarted = started;
+  });
 }
 
 function renderRewardScene(completed) {
@@ -309,6 +314,7 @@ function renderRewardScene(completed) {
   tray.setAttribute('aria-label', reward.description);
   const scene = document.createElement('div');
   scene.className = `scene scene--${reward.className}`;
+  scene.classList.toggle('scene--waiting', legacyPrizeStarted === undefined);
   scene.setAttribute('aria-hidden', 'true');
 
   const sky = document.createElement('div');
@@ -353,10 +359,12 @@ function renderRewardScene(completed) {
   cast.append(sprite);
   scene.prepend(sky, cast);
   tray.replaceChildren(scene);
+  if (legacyPrizeStarted !== undefined) resumeSceneAt(scene, legacyPrizeStarted);
 }
 
 menuButton.addEventListener('click', () => showMenu());
-document.querySelector('#learn-button').addEventListener('click', () => showLesson(0));
+document.querySelector('#learn-button').addEventListener('click', startLessons);
+document.querySelector('#find-button').addEventListener('click', showRecognitionPicker);
 document.querySelector('#test-button').addEventListener('click', startTest);
 action.addEventListener('click', () => nextAction?.());
 themeButton.addEventListener('click', switchTheme);
@@ -364,4 +372,5 @@ musicButton.addEventListener('click', () => {
   musicWanted = !musicWanted;
   void syncMusic();
 });
+document.addEventListener('click', initGameAudio, { capture: true, once: true });
 showMenu(false);
