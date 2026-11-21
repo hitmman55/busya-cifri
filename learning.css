@@ -151,6 +151,7 @@
 }
 .voice-line:has(button[hidden]) { display: none; }
 .voice-line p { margin: 0; font-weight: 750; }
+.voice-line .voice-status { width: 100%; color: #85314d; font-size: .92rem; }
 .voice-line .menu-button { padding-inline: 10px; font-size: .9rem; }
 .voice-line + .action { margin-top: 14px; }
 .adult-settings { margin-top: 23px; font-size: .88rem; }

@@ -85,9 +85,12 @@ async function syncMusic() {
   const revision = ++musicRevision;
   const playing = await setJinglePlaying(winter && musicWanted);
   if (revision !== musicRevision) return;
+  updateMusicButton(playing);
+}
+
+function updateMusicButton(playing) {
   musicButton.setAttribute('aria-pressed', String(playing));
   musicButton.textContent = playing ? 'Музыка играет' : 'Включить музыку';
-  if (winter && !playing) musicWanted = false;
 }
 
 function switchTheme() {
@@ -369,8 +372,17 @@ document.querySelector('#test-button').addEventListener('click', startTest);
 action.addEventListener('click', () => nextAction?.());
 themeButton.addEventListener('click', switchTheme);
 musicButton.addEventListener('click', () => {
-  musicWanted = !musicWanted;
+  musicWanted = musicButton.getAttribute('aria-pressed') !== 'true';
   void syncMusic();
 });
-document.addEventListener('click', initGameAudio, { capture: true, once: true });
+document.addEventListener('game-audio-state', () => updateMusicButton(winter && musicWanted && isJinglePlaying()));
+for (const eventName of ['click', 'pointerup']) {
+  document.addEventListener(eventName, event => {
+    if (!event.isTrusted) return;
+    initGameAudio();
+    if (eventName === 'click' && event.target !== voiceButton && event.target !== repeatButton
+        && event.target.closest?.('button')) prepareVoiceGesture();
+  }, true);
+}
 showMenu(false);
+document.querySelector('#browser-launch-note').hidden = true;

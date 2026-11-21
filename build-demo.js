@@ -32,7 +32,7 @@ const javascript = scripts.map(name => {
 }).join('\n');
 
 const demo = read('index.html', 'utf8')
-  .replace(/<link rel="stylesheet" href="([^"]+)">/g, (_, file) => `<style>\n${read(file, 'utf8')}</style>`)
+  .replace(/<link rel="stylesheet" href="([^"]+)">/g, (_, url) => `<style>\n${read(url.split('?')[0], 'utf8')}</style>`)
   .replace(/^  <script src="[^"]+" defer><\/script>\n/gm, '')
   .replace('assets/busya.webp', () => image('busya'))
   .replace('</body>', () => `<script>\n${javascript}</script>\n</body>`);

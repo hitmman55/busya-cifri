@@ -86,12 +86,42 @@ let jingleBuffer;
 let jingleSource;
 let jingleGain;
 let duckJingle = false;
+let audioResume;
 
 function initGameAudio() {
   const Audio = window.AudioContext || window.webkitAudioContext;
   if (!Audio) return;
-  jingleContext ??= new Audio();
-  if (jingleContext.state === 'suspended') void jingleContext.resume().catch(() => {});
+  try {
+    if (!jingleContext || jingleContext.state === 'closed') {
+      jingleContext = new Audio();
+      jingleContext.addEventListener('statechange', () => document.dispatchEvent(new Event('game-audio-state')));
+    }
+    if (jingleContext.state !== 'running') {
+      const context = jingleContext;
+      audioResume = Promise.resolve(context.resume()).then(() => context.state === 'running', () => false);
+    }
+  } catch {
+    audioResume = undefined;
+  }
+}
+
+function waitForGameAudio() {
+  return jingleContext?.state === 'running' ? true : (audioResume ?? false);
+}
+
+function isJinglePlaying() {
+  return Boolean(jingleSource && jingleContext?.state === 'running');
+}
+
+async function waitForMusic() {
+  let timer;
+  try {
+    return await Promise.race([waitForGameAudio(), new Promise(resolve => {
+      timer = setTimeout(() => resolve(false), 1300);
+    })]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function setJingleDucking(active) {
@@ -128,12 +158,13 @@ async function setJinglePlaying(playing) {
     jingleGain = undefined;
     return false;
   }
-  if (jingleSource) return true;
-  const Audio = window.AudioContext || window.webkitAudioContext;
-  if (!Audio) return false;
+  if (jingleSource) {
+    await waitForMusic();
+    return isJinglePlaying();
+  }
+  if (!jingleContext) return false;
   let source;
   try {
-    jingleContext ??= new Audio();
     jingleBuffer ??= createJingleBuffer(jingleContext);
     source = jingleContext.createBufferSource();
     source.buffer = jingleBuffer;
@@ -143,7 +174,7 @@ async function setJinglePlaying(playing) {
     source.connect(jingleGain).connect(jingleContext.destination);
     source.start();
     jingleSource = source;
-    await jingleContext.resume();
+    await waitForMusic();
     return jingleSource === source && jingleContext.state === 'running';
   } catch {
     if (source && jingleSource === source) {

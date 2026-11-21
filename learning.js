@@ -94,11 +94,24 @@ function showLessonCount(number, card) {
   const pronounce = uiButton('Назвать число', () => void say(`number-${number}`));
   pronounce.hidden = true;
   const replay = uiButton('Повторить счёт', () => void countTogether());
-  activityTools.append(pronounce, replay);
+  const showAll = uiButton('Показать сразу', () => {
+    counting?.abort();
+    stopVoice();
+    pieces.forEach(piece => {
+      piece.classList.add('revealed');
+      piece.classList.remove('lit');
+    });
+    rememberVoice(`total-${number}`);
+    complete();
+  });
+  activityTools.append(pronounce, replay, showAll);
   let counting;
   cancelScreenView = () => counting?.abort();
 
   function complete() {
+    replayVoice = undefined;
+    seenCards.add(number);
+    showAll.hidden = true;
     pronounce.hidden = false;
     setAction('Готово', () => finishLesson(number));
   }
@@ -109,6 +122,7 @@ function showLessonCount(number, card) {
     const { signal } = counting;
     setAction('', undefined);
     pronounce.hidden = true;
+    showAll.hidden = false;
     replayVoice = countTogether;
     pieces.forEach(piece => piece.classList.remove('revealed', 'lit'));
     await say(`number-${number}`);
@@ -123,8 +137,6 @@ function showLessonCount(number, card) {
     }
     await say(`total-${number}`);
     if (signal.aborted) return;
-    replayVoice = undefined;
-    seenCards.add(number);
     complete();
   }
 
@@ -162,6 +174,9 @@ function showWritingExercise(number, card, view) {
     onComplete() {
       result.textContent = 'Дорожка пройдена!';
       void say('writing-done');
+    },
+    onNextStroke() {
+      result.textContent = 'Подними палец и начни с зелёной точки.';
     },
     onInk(drawn) {
       if (confirmWriting) confirmWriting.disabled = !drawn;
@@ -226,7 +241,7 @@ function startRecognition(level = recognitionLevel) {
   const pool = recognitions[level];
   while (recognitionRound.length < 5) {
     const group = shuffle(pool);
-    if (group[0] === recognitionRound.at(-1)) [group[0], group[1]] = [group[1], group[0]];
+    if (group[0] === recognitionRound[recognitionRound.length - 1]) [group[0], group[1]] = [group[1], group[0]];
     recognitionRound.push(...group.slice(0, 5 - recognitionRound.length));
   }
   showRecognitionQuestion();
@@ -267,7 +282,16 @@ function showRecognitionQuestion() {
     if (number === target) targetButton = button;
     answers.append(button);
   }
-  void say(`find-${target}`);
+  const { signal } = screenLife;
+  function showSampleWhenMuted() {
+    if (!voiceEnabled) showSample();
+  }
+  document.addEventListener('game-voice-preference', showSampleWhenMuted);
+  cancelScreenView = () => document.removeEventListener('game-voice-preference', showSampleWhenMuted);
+  if (!voiceEnabled) showSample();
+  void say(`find-${target}`).then(played => {
+    if (!played && !signal.aborted && (!voiceEnabled || voiceBlocked)) showSample();
+  });
   question.focus();
 
   function showSample() {
@@ -301,7 +325,7 @@ function showRecognitionQuestion() {
       const key = final ? 'find-finish' : independent === 1 ? 'find-first' : 'find-third';
       const lines = final ? [`found-${target}`, `recognition-total-${independent}`] : `found-${target}`;
       const next = final ? showRecognitionResult : advanceRecognition;
-      showPrize(key, lines, undefined, () => showRecognitionProgress(true), next, final);
+      showPrize(key, lines, undefined, () => showRecognitionProgress(true), next);
       return;
     }
     showRecognitionProgress(true);

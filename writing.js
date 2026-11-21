@@ -26,7 +26,7 @@ function sampleStroke([start, ...segments]) {
   return points;
 }
 
-function createWriting(number, mode, { onComplete, onInk }) {
+function createWriting(number, mode, { onComplete, onNextStroke, onInk }) {
   const canvas = document.createElement('canvas');
   canvas.className = 'writing-canvas';
   canvas.setAttribute('role', 'img');
@@ -39,6 +39,7 @@ function createWriting(number, mode, { onComplete, onInk }) {
   let left = 0;
   let top = 0;
   let frame;
+  let resizeFrame;
   let strokeIndex = 0;
   let offset = -1;
   let pointer;
@@ -69,7 +70,7 @@ function createWriting(number, mode, { onComplete, onInk }) {
 
   function draw() {
     if (!scale) return;
-    ctx.resetTransform();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.translate(left, top);
     ctx.scale(scale, scale);
@@ -110,8 +111,13 @@ function createWriting(number, mode, { onComplete, onInk }) {
   function size() {
     const bounds = canvas.getBoundingClientRect();
     const ratio = Math.min(2, devicePixelRatio || 1);
-    canvas.width = Math.round(bounds.width * ratio);
-    canvas.height = Math.round(bounds.height * ratio);
+    const nextWidth = Math.round(bounds.width * ratio);
+    const nextHeight = Math.round(bounds.height * ratio);
+    if (canvas.width !== nextWidth || canvas.height !== nextHeight) {
+      pointer = undefined;
+      canvas.width = nextWidth;
+      canvas.height = nextHeight;
+    }
     scale = Math.min(canvas.width / width, canvas.height / 104);
     left = (canvas.width - width * scale) / 2;
     top = (canvas.height - 104 * scale) / 2;
@@ -143,7 +149,8 @@ function createWriting(number, mode, { onComplete, onInk }) {
 
   function tracePoint([x, y]) {
     const stroke = strokes[strokeIndex];
-    if (!stroke || pointer === undefined) return;
+    if (!stroke || pointer === undefined) return false;
+    const previous = offset;
     const start = Math.max(0, offset + 1);
     const limit = Math.min(start + (offset < 0 ? 1 : 5), stroke.length);
     for (let i = start; i < limit; i += 1) {
@@ -156,31 +163,31 @@ function createWriting(number, mode, { onComplete, onInk }) {
       offset = -1;
       pointer = undefined;
       if (strokeIndex === strokes.length) onComplete();
+      else onNextStroke();
+      return true;
     }
+    return offset > previous;
   }
 
   function drawPoint(point) {
-    lastMotion = Date.now();
     if (mode === 'free') {
-      const line = ink.at(-1);
+      const line = ink[ink.length - 1];
       line.push(point.map((value, axis) => Math.max(0, Math.min(axis ? 104 : width, value))));
       if (Math.hypot(point[0] - line[0][0], point[1] - line[0][1]) >= 4) onInk(true);
-    } else {
-      tracePoint(point);
-    }
-    draw();
+    } else if (tracePoint(point)) lastMotion = Date.now();
   }
 
   if (mode !== 'watch') {
     canvas.addEventListener('pointerdown', event => {
       if (pointer !== undefined || event.button !== 0 || !scale) return;
       pointer = event.pointerId;
-      canvas.setPointerCapture(pointer);
+      canvas.setPointerCapture?.(pointer);
       last = coords(event);
       if (mode === 'free') {
         ink.push([]);
       }
       drawPoint(last);
+      draw();
     });
     canvas.addEventListener('pointermove', event => {
       if (pointer !== event.pointerId) return;
@@ -194,16 +201,22 @@ function createWriting(number, mode, { onComplete, onInk }) {
         drawPoint(point);
       }
       last = point;
+      draw();
     });
     for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) {
       canvas.addEventListener(name, event => {
         if (pointer === event.pointerId) pointer = undefined;
       });
     }
+    if (!canvas.setPointerCapture) canvas.addEventListener('pointerleave', () => { pointer = undefined; });
   }
 
-  const observer = new ResizeObserver(size);
-  observer.observe(canvas);
+  const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(size) : null;
+  if (observer) observer.observe(canvas);
+  else {
+    window.addEventListener('resize', size);
+    resizeFrame = requestAnimationFrame(size);
+  }
   const hint = mode === 'trace' ? setInterval(draw, 420) : undefined;
 
   return {
@@ -225,8 +238,10 @@ function createWriting(number, mode, { onComplete, onInk }) {
     },
     dispose() {
       cancelAnimationFrame(frame);
+      cancelAnimationFrame(resizeFrame);
       clearInterval(hint);
-      observer.disconnect();
+      if (observer) observer.disconnect();
+      else window.removeEventListener('resize', size);
     },
   };
 }

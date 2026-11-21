@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f9df79">
   <title>Буся и цифры</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="learning.css">
-  <script src="curriculum.js" defer></script>
-  <script src="music.js" defer></script>
-  <script src="voice.js" defer></script>
-  <script src="writing.js" defer></script>
-  <script src="learning.js" defer></script>
-  <script src="prizes.js" defer></script>
-  <script src="game.js" defer></script>
+  <link rel="stylesheet" href="styles.css?v=20261121-voice-fix">
+  <link rel="stylesheet" href="learning.css?v=20261121-voice-fix">
+  <script src="curriculum.js?v=20261121-voice-fix" defer></script>
+  <script src="music.js?v=20261121-voice-fix" defer></script>
+  <script src="voice.js?v=20261121-voice-fix" defer></script>
+  <script src="writing.js?v=20261121-voice-fix" defer></script>
+  <script src="learning.js?v=20261121-voice-fix" defer></script>
+  <script src="prizes.js?v=20261121-voice-fix" defer></script>
+  <script src="game.js?v=20261121-voice-fix" defer></script>
 </head>
 <body>
   <div class="snowfall" id="snowfall" aria-hidden="true" hidden></div>
@@ -37,6 +37,7 @@
       </aside>
 
       <section class="board" aria-labelledby="question">
+        <p id="browser-launch-note">Если меню не появилось, откройте игру в браузере. Для автономной игры скачайте demo.html и откройте его в Chrome, Edge, Firefox или Safari.</p>
         <ol class="progress" id="progress" aria-label="Задания" hidden></ol>
         <h1 id="question" tabindex="-1"></h1>
         <div class="modes" id="modes" hidden>
@@ -52,6 +53,7 @@
         <div class="voice-line">
           <p id="voice-caption" aria-live="polite"></p>
           <button class="menu-button" id="repeat-voice" type="button" hidden>Повторить голос</button>
+          <p id="voice-status" class="voice-status" role="status" hidden>Звук не запустился. Можно попробовать снова или продолжить без звука.</p>
         </div>
         <button class="action" id="action" type="button" hidden>Дальше</button>
       </section>

@@ -39,6 +39,7 @@ const prizeScenes = {
 };
 
 function resumeSceneAt(scene, start) {
+  if (typeof scene.getAnimations !== 'function') return;
   const elapsed = performance.now() - start;
   for (const animation of scene.getAnimations({ subtree: true })) {
     if (Number.isFinite(animation.effect.getComputedTiming().endTime)) animation.currentTime = elapsed;
@@ -107,7 +108,7 @@ function renderPrizeScene(prize) {
   if (prize.started) resumeSceneAt(scene, prize.started);
 }
 
-function showPrize(key, lines, caption, drawProgress, next, final = false) {
+function showPrize(key, lines, caption, drawProgress, next) {
   showScreen('', '');
   if (drawProgress) drawProgress();
   tray.classList.add('reward-tray');
@@ -115,7 +116,7 @@ function showPrize(key, lines, caption, drawProgress, next, final = false) {
   activePrize = { key, started: false };
   const prize = activePrize;
   renderPrizeScene(prize);
-  if (final) setAction('Дальше', next);
+  setAction('Дальше', next);
   question.focus();
   narratePrize(lines, caption, async (started, signal) => {
     prize.started = started;
