@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f9df79">
+  <title>Буся и цифры</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="music.js" defer></script>
+  <script src="game.js" defer></script>
+</head>
+<body>
+  <div class="snowfall" id="snowfall" aria-hidden="true" hidden></div>
+  <main class="game">
+    <header class="header">
+      <div class="wordmark"><span class="emblem" aria-hidden="true">✦</span> Буся и цифры</div>
+      <div class="header-controls">
+        <button class="menu-button" id="theme-button" type="button"><span aria-hidden="true">❄</span> Новый год</button>
+        <button class="menu-button" id="music-button" type="button" aria-pressed="false" hidden>Музыка</button>
+        <button class="menu-button" id="menu-button" type="button" hidden>В меню</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="companion" aria-label="Супергероиня Буся">
+        <span class="sparkle sparkle-left" aria-hidden="true">✦</span>
+        <span class="sparkle sparkle-right" aria-hidden="true">✧</span>
+        <img class="hero" src="assets/busya.webp" alt="" width="450" height="450">
+        <p class="speech" id="speech"></p>
+      </aside>
+
+      <section class="board" aria-labelledby="question">
+        <ol class="progress" id="progress" aria-label="Задания" hidden></ol>
+        <h1 id="question" tabindex="-1"></h1>
+        <div class="modes" id="modes" hidden>
+          <button type="button" id="learn-button">Учить<span>Числа от 1 до 10</span></button>
+          <button type="button" id="test-button">Тест<span>10 заданий</span></button>
+        </div>
+        <div class="fruit-tray" id="fruit-tray" role="group" aria-label="Предметы для счёта" hidden></div>
+        <div class="answers" id="answers" role="group" aria-label="Выбери число" hidden></div>
+        <p class="feedback" id="feedback" role="status" aria-atomic="true" hidden></p>
+        <button class="action" id="action" type="button" hidden>Дальше</button>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
